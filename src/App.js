@@ -1,19 +1,44 @@
-import { Button, Modal, Row, Table   } from "antd";
-import axios from "axios";
+import { render } from "@testing-library/react";
+import { Button, Modal, Row, Table } from "antd";
+import axios, { formToJSON } from "axios";
 import { useEffect, useState } from "react";
 
 
 
 
-function App() {  
-const {confirm} =Modal ;
+function App() {
+  const { confirm } = Modal;
 
-  const [data,setData] = useState() ;
+  const [data, setData] = useState();
+  function formatDate(dateStr) {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const date = new Date(dateStr);
+    const month = months[date.getMonth()]?.slice(0, 3);
+    const day = date.getDate();
+    const year = date.getFullYear().toString()?.slice(-2);
+
+    let suffix = "";
+    switch (day % 10) {
+      case 1:
+        suffix = "st";
+        break;
+      case 2:
+        suffix = "nd";
+        break;
+      case 3:
+        suffix = "rd";
+        break;
+      default:
+        suffix = "th";
+    }
+
+    return `${month} ${day}${suffix} ${year}`;
+  }
   const deleteProduct = (id) => {
 
     confirm({
       title: 'Do you Want to delete these items?',
-     
+
       content: 'Some descriptions',
       onOk() {
         onDelete(id)
@@ -24,68 +49,140 @@ const {confirm} =Modal ;
       },
     });
 
-  } 
-  const getData = async() =>
-  {
-    const  newData =await axios.get('https://northwind.vercel.app/api/suppliers') ;
+  }
+  const getData = async () => {
+    const newData = await axios.get('https://northwind.vercel.app/api/orders');
     setData(newData.data)
   }
-  useEffect(()=>
-  {
-    getData() ;
-    
-  },[])
+  useEffect(() => {
+    getData();
 
-  const onDelete = async(id)=>
-  {
-    const  newData =await axios.delete(`https://northwind.vercel.app/api/suppliers/${id}`) ;
-    getData() ;
+  }, [])
+
+  const onDelete = async (id) => {
+    const newData = await axios.delete(`https://northwind.vercel.app/api/suppliers/${id}`);
+    getData();
 
   }
 
 
-  
+
   const columns = [
     {
-      title: 'Id',
-      dataIndex: 'id',
-      key: 'id',
+      title: 'Customer ID',
+      dataIndex: 'customerId',
+      key: 'customerId',
+      filters: [{
+        text: 'WILMK',
+        value: 'WILMK'
+      },
+      {
+        text: 'ALFKI',
+        value: 'ALFKI'
+      },
+      {
+        text: 'ANATR',
+        value: 'ANATR'
+      },
+      {
+        text: 'ANTON',
+        value: 'ANTON'
+      },
+      {
+        text: 'AROUT',
+        value: 'AROUT'
+      },
+      {
+        text: 'BERGS',
+        value: 'BERGS'
+      },
+      {
+        text: 'BLAUS',
+        value: 'BLAUS'
+      },
+      {
+        text: 'BLONP',
+        value: 'BLONP'
+      },
+      {
+        text: 'BONAP',
+        value: 'BONAP'
+      }
+        ,
+      {
+        text: 'BOTTM',
+        value: 'BOTTM'
+      },
+      {
+        text: 'WOLZA',
+        value: 'WOLZA'
+      },
+      {
+        text: 'RICSU',
+        value: 'RICSU'
+      }
+      ],
+      sorter: (a, b) => a.customerId.localeCompare(b.customerId),
+      onFilter: (value, record) => record.customerId.indexOf(value) === 0,
+
     },
     {
-      title: 'CompanyName',
-      dataIndex: 'companyName',
-      key: 'companyName',
-      sorter: (a, b) => a.contactName.localeCompare(b.contactName) ,
+      title: 'Freight',
+      dataIndex: 'freight',
+      key: 'freight',
+      sorter: (a, b) => a.freight - b.freight,
     },
     {
-      title: 'ContactName',
-      dataIndex: 'contactName',
-      key: 'contactName',
-      sorter: (a, b) => a.contactName.localeCompare(b.contactName) ,
-          
-        
-      
-    },
-    {
-      title : 'City' ,
-      dataIndex: ['address' ,'city'],
+      title: 'Ship city',
+      dataIndex: ['shipAddress', 'city'],
       key: 'city',
-    } ,
+      //sorter: (a, b) => a.contactName.localeCompare(b.contactName),
+
+
+
+    },
     {
-      title : 'Delete' ,
-      
-      dataIndex : 'id' ,
-      render :(id)=><Button onClick={()=>deleteProduct(id)}>Delete</Button>
-    }   
+      title: 'Ship country',
+      dataIndex: ['shipAddress', 'country'],
+      key: 'country',
+      //sorter: (a, b) => a.contactName.localeCompare(b.contactName),
+
+
+
+    },
+    {
+      title: 'Order date',
+      dataIndex: 'orderDate',
+      key: 'orderDate',
+      render: (orderDate) => formatDate(orderDate),
+      sorter: (a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime(),
+
+
+    },
+    {
+      title: 'Required date',
+      dataIndex: 'requiredDate',
+      key: 'requiredDate',
+      render: (requiredDate) => formatDate(requiredDate)
+
+    },
+    {
+      title: 'Shipped date',
+      dataIndex: 'shippedDate',
+      key: 'shippedDate',
+      render: (shippedDate) => formatDate(shippedDate)
+
+    }
 
   ];
-  
+
 
   return (
     <div className="App">
-      
-      
-     <Table  rowClassName={(record)=>(record.address.city=='Tokyo' ?'red':null)}   dataSource={data} columns={columns}></Table>
+
+
+      <Table dataSource={data} columns={columns} rowClassName={(record) => (new Date(record.requiredDate).getTime() - new Date(record.shippedDate).getTime() < 0 ? 'red' : null)}></Table>
+
     </div>
   );
 }
